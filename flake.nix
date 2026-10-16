@@ -13,38 +13,24 @@
 
   inputs = {
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1.*.tar.gz";
-    systems.url = "github:nix-systems/default";
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    flake-utils.url = "github:numtide/flake-utils";
     devenv.url = "github:cachix/devenv/v2.4.0";
   };
 
   outputs =
-    {
-      self,
+    inputs@{
+      flake-parts,
+      flake-utils,
       nixpkgs,
-      devenv,
-      systems,
       ...
-    }@inputs:
-    let
-      forEachSystem = nixpkgs.lib.genAttrs (import systems);
-    in
-    {
-      devShells = forEachSystem (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            config.allowUnfree = true;
-          };
-        in
-        {
-          default = devenv.lib.mkShell {
-            inherit inputs pkgs;
-            modules = [
-              ./devenv.nix
-            ];
-          };
-        }
-      );
+    }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = flake-utils.lib.defaultSystems;
+
+      imports = [
+        ./parts/devshells.nix
+        ./parts/pkgs.nix
+      ];
     };
 }
