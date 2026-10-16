@@ -31,6 +31,7 @@
       imports = [
         ./parts/devshells.nix
         ./parts/pkgs.nix
+        ./parts/templates.nix
       ];
     };
 }
