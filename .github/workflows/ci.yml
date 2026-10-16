@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: check (${{ matrix.system }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-latest
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+          - system: aarch64-darwin
+            runner: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v23
+        with:
+          extra-conf: |
+            accept-flake-config = true
+
+      - name: Flake check
+        run: nix flake check --accept-flake-config --no-pure-eval --system ${{ matrix.system }}
+
+      - name: Build dev shell
+        run: nix build ".#devShells.${{ matrix.system }}.default" --accept-flake-config --no-pure-eval --no-link --print-build-logs
